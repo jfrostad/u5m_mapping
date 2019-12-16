@@ -44,7 +44,8 @@ load_map_annotations <- function() {
 
 load_map_results <- function(indicator, indicator_group, run_date, type, raked, start_year, end_year, single_year=0,
                              geo_levels = c("raster", "admin1", "admin2"),
-                             custom_path, use.sf,
+                             custom_path, custom_vars,
+                             use.sf,
                              cores=1) {
   
   years <- paste(start_year, end_year, sep="_")
@@ -95,7 +96,7 @@ load_map_results <- function(indicator, indicator_group, run_date, type, raked, 
                      ifelse(raked, "raked", "unraked"), "_summary.csv") %>% fread
     } else {
       pred <- fread(custom_path$admin1)
-      setnames(pred, 'value', type) #TODO set up to allow for custom variable names 
+      if(!missing(custom_vars)) setnames(pred, custom_vars$admin1, type) 
     }
     message('-> admin1 found and fread')
 
@@ -135,7 +136,7 @@ load_map_results <- function(indicator, indicator_group, run_date, type, raked, 
                      ifelse(raked, "raked", "unraked"), "_summary.csv") %>% fread
     } else {
       pred <- fread(custom_path$admin2)
-      setnames(pred, 'value', type) #TODO set up to allow for custom variable names 
+      if(!missing(custom_vars)) setnames(pred, custom_vars$admin2, type) 
     }
     message('-> admin2 found and fread')
 

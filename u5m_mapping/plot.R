@@ -61,10 +61,11 @@ today <- Sys.Date() %>% gsub("-", "_", .)
 
 #options
 run_date <- '2018_08_14_14_43_37'
-indicator_group <- 'u5m'
-indicator <- 'died_under5'
+run_date <- '2018_09_20_12_58_14'
+indicator_group <- 'cooking'
+indicator <- 'hap'
 type <- 'mean'
-raked <- T
+raked <- F
 start_year <- 2000
 end_year <- 2017
 cores <- 10
@@ -74,9 +75,16 @@ cores <- 10
 ###Input###
 #raw data
 data.dir <- file.path('/share/geospatial/mbg/u5m/died_under5/output/', run_date)
-u5m.paths <- data.table(raster=file.path(data.dir, 'died_under5_mean_raked_2000_2017.tif'),
-                        admin1=file.path(data.dir, 'died_under5_mean_raked_ad1.csv'),
-                        admin2=file.path(data.dir, 'died_under5_mean_raked_ad2.csv'))
+data.dir <- file.path('/share/geospatial/mbg/ort/ors_or_rhf/output/', run_date)
+# u5m.paths <- data.table(raster=file.path(data.dir, 'died_under5_mean_raked_2000_2017.tif'),
+#                         admin1=file.path(data.dir, 'died_under5_mean_raked_ad1.csv'),
+#                         admin2=file.path(data.dir, 'died_under5_mean_raked_ad2.csv'))
+# u5m.vars <- data.table(admin1='value',
+#                        admin2='value')
+# 
+# ors.paths <- data.table(raster=file.path(data.dir, 'died_under5_mean_raked_2000_2017.tif'),
+#                         admin1=file.path(data.dir, 'pred_derivatives', 'admin_summaries', 'ors_or_rhf_admin_1_unraked_summary.csv'),
+#                         admin2=file.path(data.dir, 'pred_derivatives', 'admin_summaries', 'ors_or_rhf_admin_2_unraked_summary.csv'))
 
 ###Output###
 out.dir  <- file.path(j_root, 'temp/jfrostad/u5m_mapping/')
@@ -98,9 +106,9 @@ annotations <- load_map_annotations()
 tic('total')
 tic('loading data')
 data <- load_map_results(indicator, indicator_group, run_date, type, raked, start_year, end_year, single_year=2017,
-                         custom_path = u5m.paths,
-                         use.sf = F,
-                         #geo_levels='admin2',
+                         custom_path = ors.paths,
+                         use.sf = T,
+                         geo_levels=c('admin2'),
                          cores=cores)
 toc()
 
@@ -113,21 +121,32 @@ zoom.global <- data.table(x1=-120, x2=150, y1=-40, y2=55)
 #render and save maps
 colors <- c('#ffffe0','#ffe4ac','#ffc879','#ffa84c','#ff8725','#ff5c03','#f12861','#cc117d','#a60383','#800080')
 colors <- magma(10, direction=-1)
+#u5m
 color_values <- c(seq(0, .05, length.out = 4), seq(.05, .10, length.out = 4), seq(.10, .25, length.out = 4)) %>%
   unique %>%
   rescale
 
+#ors
+color_values <- c(seq(0, 1, length.out = 10)) %>%
+  unique %>%
+  rescale
+
+colors <- magma(10)
+color_values <- c(seq(0, .2, length.out = 2), seq(.2, .8, length.out = 8), seq(.8, 1, length.out = 2)) %>%
+  unique %>%
+  rescale
+
 tic('plotting')
-gg <- plot_map(data$admin1, annotations, limits=c(0, .25), title='', 
+gg <- plot_map(data$admin2, annotations, limits=c(0, 1), title='', 
                legend_colors=colors, legend_color_values=color_values,
-               legend_breaks=seq(0, .25, .05), legend_labels=c(seq(0, .20, .05), ".25+"),
-               legend_title='under-5 mortality', custom_scale=T,
+               legend_breaks=seq(0, 1, .1), legend_labels=seq(0, 1, .1),
+               legend_title='ors or rhf prevalence', custom_scale=T,
                pop.mask=F, lake.mask=T, stage3.mask=T, borders=T,
                zoom=zoom.global)
 toc()
 
 tic('ggsaving')
-ggsave(filename=file.path(out.dir, 'test.png'), plot=gg, 
+ggsave(filename=file.path(out.dir, 'ors.png'), plot=gg, 
        width=10, height=6, units='in', dpi=300)
 toc()
 
